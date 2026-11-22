@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# attackframe-kali — the Kali tool layer. On the Kali edition Kali IS the host OS,
+# so this is a thin front-end for apt with Kali's metapackage names.
+#
+#   attackframe-kali setup [core|default|large|everything|headless|top10|tools-<name>|<pkg>]...
+#   attackframe-kali install <pkg...> | search <term> | metas | update | status
+set -uo pipefail
+
+AFS=/usr/share/attackframe
+C=$'\e[38;2;0;240;255m'; M=$'\e[38;2;255;43;214m'; Y=$'\e[38;2;245;255;59m'; D=$'\e[38;2;90;110;140m'; R=$'\e[0m'
+SUDO=; ((EUID)) && SUDO=sudo
+say()  { printf '%s>>%s %s\n' "$C" "$R" "$*" >&2; }
+warn() { printf '%s!!%s %s\n' "$Y" "$R" "$*" >&2; }
+die()  { printf '%s!!%s %s\n' "$M" "$R" "$*" >&2; exit 1; }
+
+list_file() { sed 's/#.*//; s/[[:space:]]//g; /^$/d' "$1"; }
+
+kali_target() {   # map a setup target to Kali package names
+  case $1 in
+    core)                    list_file "$AFS/kali-core.txt" ;;
+    kali-*)                  echo "$1" ;;
+    top10)                   echo kali-tools-top10 ;;
+    tools-*)                 echo "kali-$1" ;;
+    default|large|everything|headless|firmware|arm|nethunter) echo "kali-linux-$1" ;;
+    *)                       echo "$1" ;;
+  esac
+}
+
+install_pkgs() {
+  (($#)) || return 0
+  $SUDO apt-get update -qq || die "apt-get update failed"
+  local want=() p
+  for p; do
+    if LC_ALL=C apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [^(]'; then want+=("$p")
+    else warn "skip (no install candidate in Kali): $p"; fi
+  done
+  ((${#want[@]})) || return 0
+  $SUDO env DEBIAN_FRONTEND=noninteractive apt-get -y install "${want[@]}" && return 0
+  warn "batch install failed — retrying package by package"
+  $SUDO apt-get -y -f install || true
+  for p in "${want[@]}"; do $SUDO env DEBIAN_FRONTEND=noninteractive apt-get -y install "$p" || warn "failed: $p"; done
+}
+
+after_install() {
+  # new native tools: drop BlackArch shims they replace, refresh the app grid
+  /usr/local/bin/attackframe-box sync >/dev/null 2>&1 || $SUDO /usr/local/bin/attackframe-launchers >/dev/null 2>&1 || true
+}
+
+usage() {
+  cat <<EOF
+${C}attackframe-kali${R} — Kali tools (${M}native${R}: Kali is this system's OS)
+
+  ${Y}setup${R} [target...]   install a tool set                       (default: core)
+                      core | default | large | everything | headless | top10
+                      tools-<name> (e.g. tools-wireless) | any apt package
+  ${Y}install${R} <pkg...>    install packages (same as sudo apt install)
+  ${Y}search${R} <term>       search the Kali repositories
+  ${Y}metas${R}               list Kali metapackages
+  ${Y}update${R}              full system upgrade
+  ${Y}status${R}              Kali + BlackArch layer state
+  ${Y}run${R} <cmd...>        just runs the command (kept for old habits / scripts)
+
+  BlackArch tools: ${C}attackframe-blackarch help${R}
+EOF
+}
+
+cmd=${1:-}; shift || true
+case $cmd in
+  setup)
+    targets=("${@:-core}"); pk=()
+    [[ " ${targets[*]} " == *" everything "* ]] && warn "kali-linux-everything is 15+ GB"
+    for t in "${targets[@]}"; do mapfile -t -O "${#pk[@]}" pk < <(kali_target "$t"); done
+    say "installing: ${pk[*]:0:12}$( ((${#pk[@]} > 12)) && echo " … (+$((${#pk[@]} - 12)))")"
+    install_pkgs "${pk[@]}"; after_install ;;
+  install) (($#)) || die "install what?"; install_pkgs "$@"; after_install ;;
+  search)  apt-cache search "${1:?term}" ;;
+  metas)   apt-cache search '^kali-(linux|tools)-' | sort ;;
+  update)  $SUDO apt-get update && $SUDO apt-get -y full-upgrade && $SUDO apt-get -y autoremove; after_install ;;
+  status)  exec /usr/local/bin/attackframe-box status ;;
+  run|enter|shell)
+    (($#)) && exec "$@"
+    exec "${SHELL:-/usr/bin/zsh}" ;;
+  ''|-h|--help|help) usage ;;
+  *) die "unknown command: $cmd (see attackframe-kali help)" ;;
+esac

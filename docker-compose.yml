@@ -1,0 +1,31 @@
+# AttackFrame OS (Kali edition) — ISO builder. Normally started by ./build.sh:
+#   docker compose run --rm builder
+#
+# The builder is a privileged Kali container (debootstrap needs mknod/mounts).
+# It talks to the host's Docker daemon through the mounted socket to build the
+# BlackArch layer image, so it's cached on the host between builds.
+services:
+  builder:
+    image: ${BUILDER_IMAGE:-docker.io/kalilinux/kali-rolling:latest}
+    privileged: true
+    network_mode: host
+    security_opt:
+      - label=disable
+    working_dir: /af
+    volumes:
+      - ./:/af
+      - ./.work:/work
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      TOOLSET: ${TOOLSET:-core}
+      KALI_SUITE: ${KALI_SUITE:-kali-rolling}
+      KALI_MIRROR: ${KALI_MIRROR:-http://http.kali.org/kali}
+      KERNEL_PKG: ${KERNEL_PKG:-linux-image-amd64}
+      KALI_META: ${KALI_META:-}
+      BLACKARCH_BASE: ${BLACKARCH_BASE:-docker.io/archlinux/archlinux:latest}
+      BA_GROUPS: ${BA_GROUPS:-blackarch-recon blackarch-webapp blackarch-exploitation blackarch-cracker blackarch-wireless}
+      STRAP_SHA1: ${STRAP_SHA1:-}
+      SQUASHFS_LEVEL: ${SQUASHFS_LEVEL:-15}
+      HOST_UID: ${HOST_UID:-0}
+      HOST_GID: ${HOST_GID:-0}
+    command: ["bash", "/af/scripts/build-in-container.sh"]

@@ -107,7 +107,7 @@ printf '127.0.0.1 localhost\n127.0.1.1 %s\n::1 localhost ip6-localhost ip6-loopb
 # live-only bits out (live-boot in the initramfs would try to find a live medium)
 inchroot apt-get -y purge live-boot live-boot-initramfs-tools live-config live-config-systemd live-tools >/dev/null 2>&1 \
   || warn "could not purge live-boot/live-config"
-rm -rf "$T/etc/live" "$T/var/lib/attackframe/firstboot.done"
+rm -rf "$T/etc/live" "$T/var/lib/attackframe/firstboot.done" "$T/etc/attackframe/live-password.hash"
 rm -f "$T/etc/sudoers.d/attackframe-podman" "$T/etc/containers/storage.conf"   # Podman-era leftovers
 sed -i '/^AutomaticLogin/d' "$T/etc/gdm3/daemon.conf" 2>/dev/null || true      # no autologin when installed
 

@@ -39,6 +39,7 @@ The build runs in a privileged Kali builder container (`kalilinux/kali-rolling`)
 | `BA_GROUPS` | recon webapp exploitation cracker wireless | groups used by `TOOLSET=large` |
 | `STRAP_SHA1` | — | enforce BlackArch `strap.sh` checksum (published on blackarch.org/downloads) |
 | `SQUASHFS_LEVEL` | `15` | zstd level for the root filesystem |
+| `LIVE_PASSWORD` | `ghost` | password of the live user `ghost` (stored in the image as a SHA-512 hash) |
 
 The ISO (`out/attackframe-kali-<date>-amd64.iso`) and its `.sha256` land in `out/`. Kali package names that vanish from the repo are skipped with a warning and listed on the system in `/usr/share/attackframe/kali-skipped.txt` (install failures in `kali-failed.txt`); in the BlackArch image they're logged to `/var/log/attackframe-skipped.txt`. Work files live in `.work/`, download caches in `.cache/kali-apt` and `.cache/kali-debootstrap` (all git-ignored).
 
@@ -52,7 +53,7 @@ Test it in a VM:
 
 ## Using it
 
-The live session auto-logs in as `ghost` (passwordless sudo, in the `docker` and `wireshark` groups, live only). Boot menu options: normal, copy to RAM, persistence (a partition labelled `persistence` with a `persistence.conf` containing `/ union`), forensic (no swap, no automount), safe graphics.
+The live session auto-logs in as **`ghost` / `ghost`** (password set by `LIVE_PASSWORD` at build time; passwordless sudo, in the `docker` and `wireshark` groups, live only). Boot menu options: normal, copy to RAM, persistence (a partition labelled `persistence` with a `persistence.conf` containing `/ union`), forensic (no swap, no automount), safe graphics.
 
 On the live ISO Docker's storage lives in RAM, and the baked BlackArch image is copied into it the first time the box is used. Loading it briefly needs about twice its size in RAM. On a live USB, either give the machine plenty of RAM or let Docker use a disk instead:
 

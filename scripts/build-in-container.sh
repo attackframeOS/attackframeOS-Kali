@@ -79,11 +79,11 @@ log "Installing build toolchain"
 apt-get update -qq
 apt-get install -y -qq --no-install-recommends \
   debootstrap kali-archive-keyring squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin grub-common mtools \
-  dosfstools librsvg2-bin fontconfig curl ca-certificates xz-utils \
+  dosfstools librsvg2-bin fontconfig curl ca-certificates xz-utils openssl \
   docker-cli docker-buildx >/dev/null 2>&1 \
 || apt-get install -y -qq --no-install-recommends \
   debootstrap kali-archive-keyring squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin grub-common mtools \
-  dosfstools librsvg2-bin fontconfig curl ca-certificates xz-utils \
+  dosfstools librsvg2-bin fontconfig curl ca-certificates xz-utils openssl \
   docker.io docker-buildx >/dev/null
 if [[ $TOOLSET != minimal ]] && ! docker info >/dev/null 2>&1; then
   die "can't reach the host Docker daemon — is /var/run/docker.sock mounted? (run ./build.sh, not this script)"
@@ -241,6 +241,13 @@ LIVE_USERNAME="ghost"
 LIVE_USER_FULLNAME="AttackFrame Operator"
 LIVE_USER_DEFAULT_GROUPS="audio cdrom dip floppy video plugdev netdev powerdev scanner bluetooth sudo docker wireshark kaboxer dialout"
 EOF
+# live user's password (LIVE_PASSWORD, default "ghost"): stored only as a SHA-512
+# crypt hash, applied by attackframe-firstboot after live-config creates the user
+install -d -m 755 "$ROOT/etc/attackframe"
+printf '%s' "${LIVE_PASSWORD:-ghost}" | openssl passwd -6 -stdin > "$ROOT/etc/attackframe/live-password.hash"
+chmod 600 "$ROOT/etc/attackframe/live-password.hash"
+log "live login: ghost / $( [[ ${LIVE_PASSWORD:-ghost} == ghost ]] && echo ghost || echo '<LIVE_PASSWORD>' )"
+
 # new users get zsh and the operator profile
 cp -rT "$ROOT/usr/share/attackframe/skel" "$ROOT/etc/skel"
 sed -i 's#^\#\?DSHELL=.*#DSHELL=/usr/bin/zsh#' "$ROOT/etc/adduser.conf" 2>/dev/null || true

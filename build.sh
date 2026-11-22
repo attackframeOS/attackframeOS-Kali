@@ -10,6 +10,7 @@
 #   ./build.sh                          # TOOLSET=core   (curated Kali tools + BlackArch image)
 #   TOOLSET=minimal ./build.sh          # Kali desktop only; BlackArch pulled on first use
 #   TOOLSET=large ./build.sh            # + kali-linux-default + BlackArch groups in BA_GROUPS
+#   LIVE_PASSWORD=s3cret ./build.sh     # live user ghost's password (default: ghost)
 #
 # Needs: docker + the compose plugin (`docker compose`) or docker-compose v1.
 # Output: ./out/attackframe-kali-<date>-amd64.iso
@@ -29,7 +30,7 @@ if ! docker info >/dev/null 2>&1; then
   if (( EUID != 0 )); then
     echo ">> can't reach the Docker daemon as $(id -un) — re-running with sudo"
     echo "   (or: sudo usermod -aG docker $(id -un) and log in again)"
-    exec sudo --preserve-env=TOOLSET,KALI_SUITE,KALI_MIRROR,KERNEL_PKG,KALI_META,BUILDER_IMAGE,BLACKARCH_BASE,BA_GROUPS,STRAP_SHA1,SQUASHFS_LEVEL \
+    exec sudo --preserve-env=TOOLSET,KALI_SUITE,KALI_MIRROR,KERNEL_PKG,KALI_META,BUILDER_IMAGE,BLACKARCH_BASE,BA_GROUPS,STRAP_SHA1,SQUASHFS_LEVEL,LIVE_PASSWORD \
       "$0" "$@"
   fi
   echo "the Docker daemon isn't running: sudo systemctl enable --now docker" >&2; exit 1

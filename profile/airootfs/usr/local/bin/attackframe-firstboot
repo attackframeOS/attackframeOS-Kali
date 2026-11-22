@@ -52,6 +52,8 @@ if (( LIVE )); then
   if id ghost &>/dev/null; then
     for g in docker wireshark kaboxer dialout; do getent group "$g" >/dev/null && usermod -aG "$g" ghost; done
     usermod -s /usr/bin/zsh ghost
+    # password from the build (LIVE_PASSWORD, default "ghost") instead of live-config's default
+    [[ -s /etc/attackframe/live-password.hash ]] && usermod -p "$(cat /etc/attackframe/live-password.hash)" ghost
     [[ -f /home/ghost/.zshrc ]] || { cp -rT "$AFS/skel" /home/ghost; chown -R ghost: /home/ghost; }
   fi
 else

@@ -26,6 +26,7 @@ services:
       BA_GROUPS: ${BA_GROUPS:-blackarch-recon blackarch-webapp blackarch-exploitation blackarch-cracker blackarch-wireless}
       STRAP_SHA1: ${STRAP_SHA1:-}
       SQUASHFS_LEVEL: ${SQUASHFS_LEVEL:-15}
+      LIVE_PASSWORD: ${LIVE_PASSWORD:-ghost}
       HOST_UID: ${HOST_UID:-0}
       HOST_GID: ${HOST_GID:-0}
     command: ["bash", "/af/scripts/build-in-container.sh"]

@@ -7,6 +7,9 @@ live-boot
 live-config
 live-config-systemd
 live-tools
+# live-config only *recommends* these; without user-setup the live user is never created
+user-setup
+keyboard-configuration
 discover
 laptop-detect
 os-prober

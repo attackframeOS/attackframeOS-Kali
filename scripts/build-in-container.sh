@@ -464,4 +464,5 @@ chown -R "${HOST_UID:-0}:${HOST_GID:-0}" "$AF/out" "$AF/.cache" 2>/dev/null || t
 [[ -s $ROOT/etc/ssl/certs/ca-certificates.crt ]] || warn "CA bundle missing in the image — HTTPS will fail"
 [[ $TOOLSET == minimal ]] || [[ -s $IMGDIR/blackarch.tar ]] || warn "BlackArch image missing from the ISO"
 [[ $TOOLSET == minimal ]] || [[ -x $ROOT/usr/bin/nmap ]] || warn "nmap missing — did the Kali tool install fail?"
+[[ -x $ROOT/usr/lib/user-setup/user-setup-apply ]] || warn "user-setup missing — live-config won't create ghost (firstboot will)"
 log "Done: $OUTISO ($(du -h "$OUTISO" | cut -f1))"

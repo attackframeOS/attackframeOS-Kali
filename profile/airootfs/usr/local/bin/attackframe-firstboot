@@ -42,10 +42,18 @@ for d in /usr/share/icons/hicolor /usr/share/icons/AttackFrame-*; do gtk-update-
 dconf update 2>/dev/null || true
 
 # ---- live operator ---------------------------------------------------------
-# live-config creates "ghost" (passwordless sudo) before we run (username=ghost on
-# the kernel command line). GDM autologin is set here so it doesn't depend on
-# which live-config components are present.
+# live-config normally creates "ghost" before we run (username=ghost on the kernel
+# command line, needs the user-setup package). If it didn't, create the account
+# here so login, autologin and the password never depend on live-config.
 if (( LIVE )); then
+  if ! id ghost &>/dev/null; then
+    log "live-config did not create ghost — creating it"
+    useradd -m -u 1000 -s /usr/bin/zsh -c "AttackFrame Operator" -k "$AFS/skel" ghost \
+      || useradd -m -s /usr/bin/zsh -c "AttackFrame Operator" -k "$AFS/skel" ghost
+    for g in sudo audio video plugdev netdev bluetooth; do getent group "$g" >/dev/null && usermod -aG "$g" ghost; done
+  fi
+  # passwordless sudo on the live system (live-config's sudo component does the same)
+  printf 'ghost ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/attackframe-live && chmod 440 /etc/sudoers.d/attackframe-live
   if [[ -f /etc/gdm3/daemon.conf ]] && ! grep -q '^AutomaticLogin=ghost' /etc/gdm3/daemon.conf; then
     sed -i '/^\[daemon\]/a AutomaticLoginEnable=true\nAutomaticLogin=ghost' /etc/gdm3/daemon.conf
   fi
@@ -53,7 +61,11 @@ if (( LIVE )); then
     for g in docker wireshark kaboxer dialout; do getent group "$g" >/dev/null && usermod -aG "$g" ghost; done
     usermod -s /usr/bin/zsh ghost
     # password from the build (LIVE_PASSWORD, default "ghost") instead of live-config's default
-    [[ -s /etc/attackframe/live-password.hash ]] && usermod -p "$(cat /etc/attackframe/live-password.hash)" ghost
+    if [[ -s /etc/attackframe/live-password.hash ]]; then
+      usermod -p "$(cat /etc/attackframe/live-password.hash)" ghost && log "ghost password set from the build (LIVE_PASSWORD)"
+    else
+      log "no /etc/attackframe/live-password.hash — ghost keeps live-config's default password (live)"
+    fi
     [[ -f /home/ghost/.zshrc ]] || { cp -rT "$AFS/skel" /home/ghost; chown -R ghost: /home/ghost; }
   fi
 else

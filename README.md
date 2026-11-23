@@ -85,7 +85,7 @@ Kali tools are just commands (`nmap`, `msfconsole`, `burpsuite` …). `sudo <too
 From the live session:
 
 ```bash
-sudo attackframe-install /dev/sda --user ghost
+sudo /usr/local/bin/attackframe-install /dev/sda --user ghost
 ```
 
 Wipes the disk (GPT: BIOS-boot + 512 MiB EFI + ext4 root), copies the live system including the native Kali tools and the baked BlackArch image, removes live-boot, creates your user and installs GRUB for both UEFI and legacy BIOS. Your user is added to the `docker` group so the BlackArch box and its launchers work without a password prompt. Membership of `docker` is root-equivalent; add `--no-docker-group` to leave it out, in which case the box runs through sudo.
